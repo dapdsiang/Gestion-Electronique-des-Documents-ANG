@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+{% block titre %}Tableau de bord{% endblock %}
+{% block contenu %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <h1 class="h4 mb-0">Bonjour {{ user.first_name|default:user.username }} 👋</h1>
+  {% if user.peut_deposer %}<a class="btn btn-ang" href="{% url 'creer' %}"><i class="bi bi-cloud-upload"></i> Déposer un document</a>{% endif %}
+</div>
+
+<div class="row g-3 mb-4">
+  <div class="col-6 col-lg-3"><div class="card h-100"><div class="card-body">
+    <div class="text-muted small">Documents accessibles</div><div class="stat-nombre">{{ total }}</div></div></div></div>
+  {% for label, n, classe in par_statut %}
+  <div class="col-6 col-lg-3"><div class="card h-100"><div class="card-body">
+    <div class="text-muted small"><span class="badge bg-{{ classe }}">{{ label }}</span></div><div class="stat-nombre">{{ n }}</div></div></div></div>
+  {% endfor %}
+</div>
+
+<div class="row g-3">
+  <div class="col-lg-8">
+    <div class="card mb-3"><div class="card-header bg-white fw-semibold">Derniers documents</div>
+      {% include "partials/table_documents.html" with documents=recents %}</div>
+    {% if user.peut_valider %}
+    <div class="card"><div class="card-header bg-white fw-semibold">En attente de validation</div>
+      {% include "partials/table_documents.html" with documents=a_valider %}</div>
+    {% endif %}
+  </div>
+  <div class="col-lg-4">
+    <div class="card mb-3"><div class="card-header bg-white fw-semibold">Répartition par type</div>
+      <ul class="list-group list-group-flush">
+        {% for t, n in par_type %}<li class="list-group-item d-flex justify-content-between">{{ t }}<span class="badge bg-secondary">{{ n }}</span></li>
+        {% empty %}<li class="list-group-item text-muted">—</li>{% endfor %}
+      </ul></div>
+    <div class="card"><div class="card-header bg-white fw-semibold">Mes brouillons</div>
+      <ul class="list-group list-group-flush">
+        {% for d in mes_brouillons %}<li class="list-group-item"><a href="{% url 'detail' d.pk %}" class="text-decoration-none">{{ d.numero }}</a> · {{ d.titre|truncatechars:40 }}</li>
+        {% empty %}<li class="list-group-item text-muted">Aucun brouillon.</li>{% endfor %}
+      </ul></div>
+  </div>
+</div>
+{% endblock %}

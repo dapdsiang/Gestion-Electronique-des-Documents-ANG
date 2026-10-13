@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+{% block titre %}Journal d'audit{% endblock %}
+{% block contenu %}
+<h1 class="h4 mb-3">Journal d'audit</h1>
+<form method="get" class="card card-body mb-3"><div class="row g-2">
+  <div class="col-md-4"><select name="action" class="form-select"><option value="">Toutes les actions</option>
+    {% for code, label in actions %}<option value="{{ code }}" {% if code == action_sel %}selected{% endif %}>{{ label }}</option>{% endfor %}</select></div>
+  <div class="col-md-4"><select name="utilisateur" class="form-select"><option value="">Tous les utilisateurs</option>
+    {% for u in utilisateurs %}<option value="{{ u.pk }}" {% if u.pk|stringformat:"s" == utilisateur_sel %}selected{% endif %}>{{ u }}</option>{% endfor %}</select></div>
+  <div class="col-md-4"><button class="btn btn-ang">Filtrer</button> <a href="{% url 'journal' %}" class="btn btn-outline-secondary">Réinitialiser</a></div>
+</div></form>
+<div class="card"><div class="table-responsive"><table class="table table-sm table-hover mb-0">
+  <thead><tr><th>Date</th><th>Utilisateur</th><th>Action</th><th>Document</th><th>Détail</th><th>IP</th></tr></thead>
+  <tbody>{% for e in page %}
+    <tr><td class="text-nowrap">{{ e.date|date:"d/m/Y H:i:s" }}</td><td>{{ e.utilisateur|default:"—" }}</td>
+      <td>{{ e.get_action_display }}</td>
+      <td>{% if e.document_id %}<a href="{% url 'detail' e.document_id %}">{{ e.numero_document }}</a>{% else %}{{ e.numero_document|default:"—" }}{% endif %}</td>
+      <td>{{ e.detail }}</td><td>{{ e.adresse_ip|default:"" }}</td></tr>
+  {% empty %}<tr><td colspan="6" class="text-center text-muted py-3">Aucune entrée.</td></tr>{% endfor %}</tbody>
+</table></div><div class="card-footer bg-white">{% include "partials/pagination.html" %}</div></div>
+{% endblock %}

@@ -1,0 +1,92 @@
+{% extends "base.html" %}
+{% block titre %}{{ doc.numero }}{% endblock %}
+{% block contenu %}
+<div class="d-flex flex-wrap justify-content-between align-items-start gap-2 mb-3">
+  <div>
+    <div class="text-muted">{{ doc.numero }}</div>
+    <h1 class="h4 mb-1">{{ doc.titre }}</h1>
+    <span class="badge bg-{{ doc.classe_statut }}">{{ doc.get_statut_display }}</span>
+    <span class="badge bg-{{ doc.classe_confidentialite }}">{{ doc.get_confidentialite_display }}</span>
+  </div>
+  <div class="d-flex flex-wrap gap-2">
+    {% if modifiable %}
+      <a class="btn btn-outline-secondary" href="{% url 'modifier' doc.pk %}"><i class="bi bi-pencil"></i> Modifier</a>
+      <a class="btn btn-outline-secondary" href="{% url 'nouvelle_version' doc.pk %}"><i class="bi bi-files"></i> Nouvelle version</a>
+    {% endif %}
+    {% for code, libelle, classe in actions %}
+      {% if code == "rejeter" %}
+        <button class="btn btn-{{ classe }}" data-bs-toggle="modal" data-bs-target="#modalRejet">{{ libelle }}</button>
+      {% else %}
+        <form method="post" action="{% url 'changer_statut' doc.pk code %}">{% csrf_token %}<button class="btn btn-{{ classe }}">{{ libelle }}</button></form>
+      {% endif %}
+    {% endfor %}
+  </div>
+</div>
+
+{% if doc.motif_rejet and doc.statut == "BROUILLON" %}
+  <div class="alert alert-danger"><strong>Rejeté :</strong> {{ doc.motif_rejet }}</div>
+{% endif %}
+
+<div class="row g-3">
+  <div class="col-lg-5">
+    <div class="card mb-3"><div class="card-header bg-white fw-semibold">Informations</div>
+      <dl class="row mb-0 p-3 small">
+        <dt class="col-5">Type</dt><dd class="col-7">{{ doc.get_type_document_display }}</dd>
+        <dt class="col-5">Service</dt><dd class="col-7">{{ doc.service|default:"—" }}</dd>
+        <dt class="col-5">Date</dt><dd class="col-7">{{ doc.date_document|date:"d/m/Y" }}</dd>
+        <dt class="col-5">Législature</dt><dd class="col-7">{{ doc.legislature|default:"—" }}</dd>
+        <dt class="col-5">Session</dt><dd class="col-7">{{ doc.session|default:"—" }}</dd>
+        <dt class="col-5">Mots-clés</dt><dd class="col-7">{{ doc.mots_cles|default:"—" }}</dd>
+        <dt class="col-5">Déposé par</dt><dd class="col-7">{{ doc.auteur }}</dd>
+        <dt class="col-5">Créé le</dt><dd class="col-7">{{ doc.cree_le|date:"d/m/Y H:i" }}</dd>
+        <dt class="col-5">Partagé avec</dt><dd class="col-7">{% for u in doc.partage_avec.all %}{{ u }}{% if not forloop.last %}, {% endif %}{% empty %}—{% endfor %}</dd>
+      </dl>
+      {% if doc.resume %}<div class="px-3 pb-3 small"><strong>Résumé</strong><br>{{ doc.resume|linebreaksbr }}</div>{% endif %}
+    </div>
+
+    <div class="card"><div class="card-header bg-white fw-semibold">Versions</div>
+      <ul class="list-group list-group-flush">
+      {% for v in versions %}
+        <li class="list-group-item">
+          <div class="d-flex justify-content-between align-items-start">
+            <div><strong>v{{ v.numero }}</strong> · {{ v.nom_original|truncatechars:35 }}
+              <div class="text-muted small">{{ v.cree_le|date:"d/m/Y H:i" }} · {{ v.auteur }} · {{ v.taille_lisible }}</div>
+              {% if v.commentaire %}<div class="small">{{ v.commentaire }}</div>{% endif %}
+              <div class="text-muted" style="font-size:.7rem" title="Empreinte SHA-256 (intégrité)">SHA-256 : {{ v.empreinte|slice:":16" }}…</div></div>
+            <a class="btn btn-sm btn-outline-success" href="{% url 'telecharger' doc.pk v.numero %}"><i class="bi bi-download"></i></a>
+          </div>
+        </li>
+      {% endfor %}
+      </ul>
+    </div>
+  </div>
+
+  <div class="col-lg-7">
+    <div class="card mb-3"><div class="card-header bg-white fw-semibold">Aperçu (dernière version)</div>
+      <div class="card-body">
+      {% if derniere.previsualisable %}
+        {% if derniere.extension == "pdf" %}
+          <iframe class="apercu" src="{% url 'telecharger' doc.pk derniere.numero %}?inline=1"></iframe>
+        {% else %}
+          <img class="img-fluid" src="{% url 'telecharger' doc.pk derniere.numero %}?inline=1" alt="Aperçu">
+        {% endif %}
+      {% else %}
+        <p class="text-muted mb-0">Aperçu indisponible pour ce format. Utilisez le bouton de téléchargement.</p>
+      {% endif %}
+      </div>
+    </div>
+    {% if historique %}
+    <div class="card"><div class="card-header bg-white fw-semibold">Historique récent</div>
+      <ul class="list-group list-group-flush small">
+        {% for h in historique %}<li class="list-group-item">{{ h.date|date:"d/m/Y H:i" }} · {{ h.utilisateur|default:"—" }} · {{ h.get_action_display }} {{ h.detail }}</li>{% endfor %}
+      </ul></div>
+    {% endif %}
+  </div>
+</div>
+
+<div class="modal fade" id="modalRejet" tabindex="-1"><div class="modal-dialog"><form class="modal-content" method="post" action="{% url 'changer_statut' doc.pk 'rejeter' %}">{% csrf_token %}
+  <div class="modal-header"><h5 class="modal-title">Rejeter le document</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+  <div class="modal-body"><label class="form-label">Motif du rejet <span class="text-danger">*</span></label><textarea name="motif" class="form-control" rows="3" required></textarea></div>
+  <div class="modal-footer"><button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button><button class="btn btn-danger">Rejeter</button></div>
+</form></div></div>
+{% endblock %}

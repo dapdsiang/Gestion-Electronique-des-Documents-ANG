@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+{% block titre %}Documents{% endblock %}
+{% block contenu %}
+<h1 class="h4 mb-3">Documents</h1>
+<form method="get" class="card card-body mb-3">
+  <div class="row g-2">
+    <div class="col-lg-4">{{ form.q }}</div>
+    <div class="col-6 col-lg-2">{{ form.type_document }}</div>
+    <div class="col-6 col-lg-3">{{ form.service }}</div>
+    <div class="col-6 col-lg-3">{{ form.statut }}</div>
+    <div class="col-6 col-lg-3">{{ form.confidentialite }}</div>
+    <div class="col-6 col-lg-2"><div class="input-group"><span class="input-group-text">Du</span>{{ form.date_du }}</div></div>
+    <div class="col-6 col-lg-2"><div class="input-group"><span class="input-group-text">Au</span>{{ form.date_au }}</div></div>
+    <div class="col-lg-5 d-flex gap-2 justify-content-lg-end">
+      <button class="btn btn-ang"><i class="bi bi-search"></i> Rechercher</button>
+      <a class="btn btn-outline-secondary" href="{% url 'liste' %}">Réinitialiser</a>
+    </div>
+  </div>
+</form>
+<div class="card">
+  <div class="card-header bg-white">{{ page.paginator.count }} résultat{{ page.paginator.count|pluralize }}</div>
+  {% include "partials/table_documents.html" with documents=page %}
+  <div class="card-footer bg-white">{% include "partials/pagination.html" %}</div>
+</div>
+{% endblock %}
